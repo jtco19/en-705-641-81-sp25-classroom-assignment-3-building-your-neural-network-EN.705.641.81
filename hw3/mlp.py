@@ -67,7 +67,7 @@ def featurize(sentence: str, embeddings: gensim.models.keyedvectors.KeyedVectors
         except KeyError:
             pass
 
-    # TODO (Copy from your HW1): complete the function to compute the average embedding of the sentence
+    # TODO: (Copy from your HW1): complete the function to compute the average embedding of the sentence
     # your return should be
     # None - if the vector sequence is empty, i.e. the sentence is empty or None of the words in the sentence is in the embedding vocabulary
     # A torch tensor of shape (embed_dim,) - the average word embedding of the sentence
@@ -83,7 +83,7 @@ def create_tensor_dataset(raw_data: Dict[str, List[Union[int, str]]],
     all_features, all_labels = [], []
     for text, label in tqdm(zip(raw_data['text'], raw_data['label'])):
 
-        # TODO (Copy from your HW1): complete the for loop to featurize each sentence
+        # TODO: (Copy from your HW1): complete the for loop to featurize each sentence
         # only add the feature and label to the list if the feature is not None
         feature = featurize(text, embeddings)
         if feature is not None:
@@ -113,13 +113,19 @@ Defining our First PyTorch Model
 
 
 class SentimentClassifier(nn.Module):
-    def __init__(self, embed_dim: int, num_classes: int, hidden_dims: List[int]):
+    def __init__(self, embed_dim: int, num_classes: int, hidden_dims: List[int], activation: str = 'sigmoid'):
         super().__init__()
         self.embed_dim = embed_dim
         self.num_classes = num_classes
 
-        # activation function
-        self.activation = nn.Sigmoid()
+        # activation functions (more potential functions added for 6.1.4)
+        activation_dict = {
+            'sigmoid': nn.Sigmoid(),
+            'relu': nn.ReLU(),
+            'tanh': nn.Tanh(),
+            'leaky_relu': nn.LeakyReLU()
+        }
+        self.activation = activation_dict.get(activation.lower(), nn.Sigmoid())
 
         # linear layers for the MLP
         self.linears = nn.ModuleList()
@@ -162,7 +168,7 @@ Chain Everything Together: Training and Evaluation
 
 def accuracy(logits: torch.FloatTensor, labels: torch.LongTensor) -> torch.FloatTensor:
     assert logits.shape[0] == labels.shape[0]
-    # TODO (Copy from your HW1): complete the function to compute the accuracy
+    # TODO: (Copy from your HW1): complete the function to compute the accuracy
     # Hint: follow the hints in the pdf description, the return should be a tensor of 0s and 1s with the same shape as labels
     # labels is a tensor of shape (batch_size,)
     # logits is a tensor of shape (batch_size, num_classes)
@@ -283,7 +289,7 @@ def run_mlp(config: easydict.EasyDict,
     test_dataloader = create_dataloader(test_dataset, config.batch_size, shuffle=False)
 
     print(f"{'-' * 10} Load Model {'-' * 10}")
-    model = SentimentClassifier(embeddings.vector_size, config.num_classes, config.hidden_dims)
+    model = SentimentClassifier(embeddings.vector_size, config.num_classes, config.hidden_dims, config.activation)
     # define optimizer that manages the model's parameters and gradient updates
     # we will learn more about optimizers in future lectures and homework
     optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)

@@ -6,8 +6,9 @@ from typing import List, Tuple, Dict, Union
 
 EMBEDDING_TYPES = ["glove-twitter-50", "glove-twitter-100", "glove-twitter-200", "word2vec-google-news-300"]
 HIDDEN_DIMS = [[], [512], [512, 512], [512, 512, 512]]
-HIDDEN_DIMS_NAMES = ["None", "512", "512 -> 512", "512 -> 512 -> 512"]
-LEARING_RATES = [0.025, 0.02, 0.01, 0.001]
+HIDDEN_DIMS_NAMES = ["None", "512", "512_2_layers", "512_3_layers"] # changing the names here to avoid invalid characters. File names with ">" were causing issues saving
+LEARNING_RATES = [0.025, 0.02, 0.01, 0.001]
+ACTIVATION_FUNCTIONS = ["sigmoid", "relu", "tanh", "leaky_relu"]
 
 
 def single_run_mlp_lm(train_d, dev_d):
@@ -56,13 +57,14 @@ def explore_mlp_structures(dev_d: Dict[str, List[Union[str, int]]],
     print(f"{'-' * 10} Load Pre-trained Embeddings: {EMBEDDING_TYPES[0]} {'-' * 10}")
     embeddings = gensim.downloader.load(EMBEDDING_TYPES[0])
 
-    for hidden_dims, hidden_dim_names, lr in zip(HIDDEN_DIMS, HIDDEN_DIMS_NAMES, LEARING_RATES):
+    for hidden_dims, hidden_dim_names, lr, activation in zip(HIDDEN_DIMS, HIDDEN_DIMS_NAMES, LEARNING_RATES, ACTIVATION_FUNCTIONS):
         train_config = EasyDict({
             'batch_size': 64,  # we use batching for
             'lr': lr,  # if embedding_type != "None" else 0.01,  # learning rate
             'num_epochs': 20,  # the total number of times all the training data is iterated over
-            'hidden_dims': hidden_dims,
-            'save_path': f'model_hidden_{hidden_dim_names}.pth',  # path where to save the model
+            'hidden_dims': [512],   # hardcode to one hidden layer as per instructions in 6.1.4
+            'activation': 'sigmoid',
+            'save_path': f'model_{lr}.pth',  # path where to save the model
             'embeddings': EMBEDDING_TYPES[0],
             'num_classes': 2,
         })
@@ -71,10 +73,10 @@ def explore_mlp_structures(dev_d: Dict[str, List[Union[str, int]]],
                                                                               test_d)
         all_emb_epoch_dev_accs.append(epoch_dev_accs)
         all_emb_epoch_dev_losses.append(epoch_dev_loss)
-        visualize_epochs(epoch_train_losses, epoch_dev_loss, "Loss", f"mlp_{hidden_dim_names}_loss.png")
+        visualize_epochs(epoch_train_losses, epoch_dev_loss, "Loss", f"mlp_{lr}_loss.png")
 
-    visualize_configs(all_emb_epoch_dev_accs, HIDDEN_DIMS_NAMES, "Accuracy", "./all_mlp_acc.png")
-    visualize_configs(all_emb_epoch_dev_losses, HIDDEN_DIMS_NAMES, "Loss", "./all_mlp_loss.png")
+    visualize_configs(all_emb_epoch_dev_accs, LEARNING_RATES, "Accuracy", "./all_mlp_acc_lr.png")
+    visualize_configs(all_emb_epoch_dev_losses, LEARNING_RATES, "Loss", "./all_mlp_loss_lr.png")
 
 
 if __name__ == '__main__':
